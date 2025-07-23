@@ -1,0 +1,7 @@
+/home/phuwit/Programming/KMITL-Microcontroller/Lab1.2/Core/Src/main.c:96:5:main	8	static
+/home/phuwit/Programming/KMITL-Microcontroller/Lab1.2/Core/Src/main.c:158:6:SystemClock_Config	88	static
+/home/phuwit/Programming/KMITL-Microcontroller/Lab1.2/Core/Src/main.c:216:13:MX_ETH_Init	8	static
+/home/phuwit/Programming/KMITL-Microcontroller/Lab1.2/Core/Src/main.c:265:13:MX_USART3_UART_Init	8	static
+/home/phuwit/Programming/KMITL-Microcontroller/Lab1.2/Core/Src/main.c:300:13:MX_USB_OTG_FS_PCD_Init	8	static
+/home/phuwit/Programming/KMITL-Microcontroller/Lab1.2/Core/Src/main.c:335:13:MX_GPIO_Init	56	static
+/home/phuwit/Programming/KMITL-Microcontroller/Lab1.2/Core/Src/main.c:393:6:Error_Handler	4	static,ignoring_inline_asm
