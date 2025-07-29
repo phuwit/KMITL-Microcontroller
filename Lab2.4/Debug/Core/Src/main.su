@@ -1,0 +1,10 @@
+../Core/Src/main.c:113:6:writeLedState	24	static
+../Core/Src/main.c:123:6:handleB1	8	static
+../Core/Src/main.c:132:6:handlePa0	8	static
+../Core/Src/main.c:152:5:main	8	static
+../Core/Src/main.c:224:6:SystemClock_Config	88	static
+../Core/Src/main.c:282:13:MX_ETH_Init	8	static
+../Core/Src/main.c:331:13:MX_USART3_UART_Init	8	static
+../Core/Src/main.c:366:13:MX_USB_OTG_FS_PCD_Init	8	static
+../Core/Src/main.c:401:13:MX_GPIO_Init	64	static
+../Core/Src/main.c:489:6:Error_Handler	4	static,ignoring_inline_asm
