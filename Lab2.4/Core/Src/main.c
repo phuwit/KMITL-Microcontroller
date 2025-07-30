@@ -134,9 +134,10 @@ void handlePa0(void) {
 
   if (ledStates == 0x00) {
     ledStates = 0x80;
+  } else {
+	  ledStates = ledStates >> 1;
   }
 
-  ledStates = ledStates >> 1;
   writeLedState();
   HAL_Delay(300);
 
@@ -144,8 +145,6 @@ void handlePa0(void) {
     ledStates = ledStates >> 1;
     if (ledStates == 0x00 && oldStates != 0x00) {
       ledStates = 0x80;
-    } else {
-      break;
     }
 
     writeLedState();
