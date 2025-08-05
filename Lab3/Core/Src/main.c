@@ -18,9 +18,9 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "stm32f7xx.h"
+#include "stm32f767xx.h"
 #include "stm32f7xx_hal.h"
-#include "stm32f7xx_hal_uart.h"
+#include "stm32f7xx_hal_gpio.h"
 #include "string.h"
 
 /* Private includes ----------------------------------------------------------*/
@@ -87,6 +87,13 @@ static void MX_USB_OTG_FS_PCD_Init(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
+void blinkLed(GPIO_TypeDef *GPIOx, uint16_t GPIO_Pin) {
+  for (unsigned int i = 0; i < 6; i++) {
+    HAL_GPIO_TogglePin(GPIOx, GPIO_Pin);
+    HAL_Delay(300);
+  }
+}
+
 /* USER CODE END 0 */
 
 /**
@@ -143,6 +150,7 @@ int main(void)
     // HAL_Delay(500);
     // END Lab 3.1
 
+
     // BEGIN Lab 3.2
     // char ch1 = 'A';
     // while (__HAL_UART_GET_FLAG(&huart3, UART_FLAG_TC) == RESET) {
@@ -152,6 +160,7 @@ int main(void)
 
     // HAL_Delay(500);
     // END Lab 3.2
+
 
     // BEGIN Lab 3.3
     // char charInput = '\0';
@@ -171,6 +180,46 @@ int main(void)
     // HAL_UART_Transmit(&huart3, (uint8_t*) &quitMessage, strlen(quitMessage), 1000);
     // return 0;
     // END Lab 3.3
+
+
+    // BEGIN Lab 3.4
+    char charInput = '\0';
+    char startMessage[] = "Display Blinking LED PRESS (1, 2)\r\nDisplay Group Members PRESS m\r\nQuit PRESS q";
+    char inputPrompt[] = "\r\n\tInput => ";
+    char quitMessage[] = "Quit";
+    char unknownMessage[] = "Unknown Command";
+    char memberMessage[] = "66010424\r\nnamthip chobthum\r\n66010648\r\nphuwit puthipairoj";
+
+    while (__HAL_UART_GET_FLAG(&huart3, UART_FLAG_TC) == RESET) {}
+    HAL_UART_Transmit(&huart3, (uint8_t*) &startMessage, strlen(startMessage), 1000);
+
+    while (charInput != 'q') {
+      while (__HAL_UART_GET_FLAG(&huart3, UART_FLAG_TC) == RESET) {}
+      HAL_UART_Transmit(&huart3, (uint8_t*) &inputPrompt, strlen(inputPrompt), 1000);
+
+      while (__HAL_UART_GET_FLAG(&huart3, UART_FLAG_RXNE) == RESET) {}
+      HAL_UART_Receive(&huart3, (uint8_t*) &charInput, 1, 1000);
+      HAL_UART_Transmit(&huart3, (uint8_t*) &charInput, 1, 1000);
+
+      switch (charInput) {
+        case '1':
+          blinkLed(GPIOG, GPIO_PIN_14);
+          break;
+        case '2':
+          blinkLed(GPIOG, GPIO_PIN_9);
+          break;
+        case 'm':
+          HAL_UART_Transmit(&huart3, (uint8_t*) &memberMessage, strlen(memberMessage), 1000);
+          break;
+        case 'q':
+          HAL_UART_Transmit(&huart3, (uint8_t*) &quitMessage, strlen(quitMessage), 1000);
+          return 0;
+        default:
+          HAL_UART_Transmit(&huart3, (uint8_t*) &unknownMessage, strlen(unknownMessage), 1000);
+          break;
+      }
+    }
+    // END Lab 3.4
   }
   /* USER CODE END 3 */
 }
@@ -375,7 +424,7 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(GPIOB, LD1_Pin|LD3_Pin|LD2_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(USB_PowerSwitchOn_GPIO_Port, USB_PowerSwitchOn_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOG, USB_PowerSwitchOn_Pin|D0_Pin|D1_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin : USER_Btn_Pin */
   GPIO_InitStruct.Pin = USER_Btn_Pin;
@@ -390,12 +439,12 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : USB_PowerSwitchOn_Pin */
-  GPIO_InitStruct.Pin = USB_PowerSwitchOn_Pin;
+  /*Configure GPIO pins : USB_PowerSwitchOn_Pin D0_Pin D1_Pin */
+  GPIO_InitStruct.Pin = USB_PowerSwitchOn_Pin|D0_Pin|D1_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(USB_PowerSwitchOn_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(GPIOG, &GPIO_InitStruct);
 
   /*Configure GPIO pin : USB_OverCurrent_Pin */
   GPIO_InitStruct.Pin = USB_OverCurrent_Pin;
