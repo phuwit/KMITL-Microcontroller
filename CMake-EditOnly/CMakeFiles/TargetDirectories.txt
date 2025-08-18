@@ -1,5 +1,0 @@
-/home/phuwit/Programming/KMITL-Microcontroller/CMake-EditOnly/CMakeFiles/CMake-EditOnly.dir
-/home/phuwit/Programming/KMITL-Microcontroller/CMake-EditOnly/CMakeFiles/edit_cache.dir
-/home/phuwit/Programming/KMITL-Microcontroller/CMake-EditOnly/CMakeFiles/rebuild_cache.dir
-/home/phuwit/Programming/KMITL-Microcontroller/CMake-EditOnly/cmake/stm32cubemx/CMakeFiles/edit_cache.dir
-/home/phuwit/Programming/KMITL-Microcontroller/CMake-EditOnly/cmake/stm32cubemx/CMakeFiles/rebuild_cache.dir

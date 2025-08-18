@@ -1,8 +1,0 @@
-{
-	"InstallScripts" : 
-	[
-		"/home/phuwit/Programming/KMITL-Microcontroller/Lab0/cmake_install.cmake",
-		"/home/phuwit/Programming/KMITL-Microcontroller/Lab0/cmake/stm32cubemx/cmake_install.cmake"
-	],
-	"Parallel" : false
-}
