@@ -15,6 +15,9 @@
   *
   ******************************************************************************
   */
+
+#include "stdio.h"
+
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
@@ -70,6 +73,20 @@ PCD_HandleTypeDef hpcd_USB_OTG_FS;
 
 /* USER CODE BEGIN PV */
 
+uint32_t adc1Output = 0;
+uint32_t adc1avg8 = 0;
+uint32_t adc1avg16 = 0;
+uint8_t adc1OutputLevel = 0;
+
+typedef struct {
+  GPIO_TypeDef *port;
+  uint16_t pin;
+} LED_Pin;
+LED_Pin ledPins[] = {{GPIOB, GPIO_PIN_1},
+                      {GPIOC, GPIO_PIN_2},
+                      {GPIOF, GPIO_PIN_4},
+                      {GPIOB, GPIO_PIN_6}};
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -85,6 +102,49 @@ static void MX_USB_OTG_FS_PCD_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+
+void displayHex(uint32_t value) {
+  char valueHex[12] = "\0";
+  sprintf(valueHex, "%#010x", adc1Output);
+
+  while (__HAL_UART_GET_FLAG(&huart3, UART_FLAG_TC) == RESET) {}
+  HAL_UART_Transmit(&huart3, (uint8_t*) valueHex, strlen(valueHex), 1000);
+}
+
+void displayStateToLed() {
+  for(unsigned int i = 0; i <= 4; i++) {
+    GPIO_PinState state = GPIO_PIN_RESET;
+    if (i + 1 > adc1OutputLevel) {
+      state = GPIO_PIN_SET;
+    }
+
+    HAL_GPIO_WritePin(ledPins[i].port, ledPins[i].pin, state);
+  }
+}
+
+int average_8 (int x) {
+  static int sample[8];
+  static int i = 0;
+  static int total = 0;
+
+  total += x - sample[i];
+  sample[i] = x;
+  i = (i==7 ? 0 : i + 1);
+
+  return total>>3;
+}
+
+int average_16 (int x) {
+  static int sample[16];
+  static int i = 0;
+  static int total = 0;
+
+  total += x - sample[i];
+  sample[i] = x;
+  i = (i==15 ? 0 : i + 1);
+
+  return total>>4;
+}
 
 /* USER CODE END 0 */
 
@@ -123,15 +183,44 @@ int main(void)
   MX_USB_OTG_FS_PCD_Init();
   /* USER CODE BEGIN 2 */
 
+  char adc1OutputPrefix[] = "ADC1_CH10 ";
+  char adc1VinTemplate[] = "  Vin = %.2f V\r\n";
+  float adc1OutputVoltage = 0;
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+  HAL_ADC_Start(&hadc1);
   while (1)
   {
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+    while (HAL_ADC_PollForConversion(&hadc1, 100) != HAL_OK) {}
+    adc1Output = HAL_ADC_GetValue(&hadc1);
+    adc1OutputVoltage = ((float)adc1Output / (float)(uint32_t)0x00000fff) * 3.3f;
+    adc1avg8 = average_8(adc1Output);
+    adc1avg16 = average_16(adc1Output);
+
+    adc1OutputLevel = adc1Output / 0x333;
+
+
+    while (__HAL_UART_GET_FLAG(&huart3, UART_FLAG_TC) == RESET) {}
+    HAL_UART_Transmit(&huart3, (uint8_t*) adc1OutputPrefix, strlen(adc1OutputPrefix), 1000);
+    displayHex(adc1Output);
+
+    while (__HAL_UART_GET_FLAG(&huart3, UART_FLAG_TC) == RESET) {}
+    char adc1OutputVinText[20] = "\0";
+    sprintf(adc1OutputVinText, adc1VinTemplate, adc1OutputVoltage);
+    while (__HAL_UART_GET_FLAG(&huart3, UART_FLAG_TC) == RESET) {}
+    HAL_UART_Transmit(&huart3, (uint8_t*) adc1OutputVinText, strlen(adc1OutputVinText), 1000);
+
+
+    displayStateToLed();
+
+
+    HAL_Delay(400);
   }
   /* USER CODE END 3 */
 }
@@ -378,6 +467,7 @@ static void MX_GPIO_Init(void)
 
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOC_CLK_ENABLE();
+  __HAL_RCC_GPIOF_CLK_ENABLE();
   __HAL_RCC_GPIOH_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
@@ -385,7 +475,14 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOG_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, LD1_Pin|LD3_Pin|LD2_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOF, GPIO_PIN_4, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_2, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOB, LD1_Pin|GPIO_PIN_1|LD3_Pin|GPIO_PIN_6
+                          |LD2_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(USB_PowerSwitchOn_GPIO_Port, USB_PowerSwitchOn_Pin, GPIO_PIN_RESET);
@@ -396,8 +493,24 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(USER_Btn_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : LD1_Pin LD3_Pin LD2_Pin */
-  GPIO_InitStruct.Pin = LD1_Pin|LD3_Pin|LD2_Pin;
+  /*Configure GPIO pin : PF4 */
+  GPIO_InitStruct.Pin = GPIO_PIN_4;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOF, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : PC2 */
+  GPIO_InitStruct.Pin = GPIO_PIN_2;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : LD1_Pin PB1 LD3_Pin PB6
+                           LD2_Pin */
+  GPIO_InitStruct.Pin = LD1_Pin|GPIO_PIN_1|LD3_Pin|GPIO_PIN_6
+                          |LD2_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
