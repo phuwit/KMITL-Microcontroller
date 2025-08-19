@@ -22,7 +22,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "stdio.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -32,7 +32,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
+#define ADC1_VALUE_COUNT 8
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -70,7 +70,9 @@ UART_HandleTypeDef huart3;
 PCD_HandleTypeDef hpcd_USB_OTG_FS;
 
 /* USER CODE BEGIN PV */
-
+volatile uint32_t adc1Values[ADC1_VALUE_COUNT];
+char adcValueDisplayTemplate[] = "%#010x\t%#010x\t%#010x\t%#010x\t%#010x\t%#010x\t%#010x\t%#010x";
+char adcValueDisplayValue[90] = "\0";
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -125,7 +127,7 @@ int main(void)
   MX_USART3_UART_Init();
   MX_USB_OTG_FS_PCD_Init();
   /* USER CODE BEGIN 2 */
-
+  HAL_ADC_Start(&hadc1);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -135,6 +137,13 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+    // while (__HAL_UART_GET_FLAG(&huart3, UART_FLAG_TC) == RESET) {}
+    // HAL_UART_Transmit(&huart3, (uint8_t*) "starting a while loop\r\n", 24, 100);
+
+    HAL_ADC_Start_DMA(&hadc1, adc1Values, ADC1_VALUE_COUNT);
+    HAL_Delay(300);
+    HAL_ADC_Stop_DMA(&hadc1);
+    HAL_Delay(300);
   }
   /* USER CODE END 3 */
 }
@@ -217,17 +226,17 @@ static void MX_ADC1_Init(void)
   /** Configure the global features of the ADC (Clock, Resolution, Data Alignment and number of conversion)
   */
   hadc1.Instance = ADC1;
-  hadc1.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV4;
+  hadc1.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV8;
   hadc1.Init.Resolution = ADC_RESOLUTION_12B;
-  hadc1.Init.ScanConvMode = ADC_SCAN_DISABLE;
-  hadc1.Init.ContinuousConvMode = DISABLE;
+  hadc1.Init.ScanConvMode = ADC_SCAN_ENABLE;
+  hadc1.Init.ContinuousConvMode = ENABLE;
   hadc1.Init.DiscontinuousConvMode = DISABLE;
   hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
   hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;
   hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
   hadc1.Init.NbrOfConversion = 1;
   hadc1.Init.DMAContinuousRequests = DISABLE;
-  hadc1.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
+  hadc1.Init.EOCSelection = ADC_EOC_SEQ_CONV;
   if (HAL_ADC_Init(&hadc1) != HAL_OK)
   {
     Error_Handler();
@@ -378,7 +387,7 @@ static void MX_DMA_Init(void)
 
   /* DMA interrupt init */
   /* DMA2_Stream0_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA2_Stream0_IRQn, 0, 0);
+  HAL_NVIC_SetPriority(DMA2_Stream0_IRQn, 1, 0);
   HAL_NVIC_EnableIRQ(DMA2_Stream0_IRQn);
 
 }
@@ -441,7 +450,22 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef* hadc) {
+  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_7, GPIO_PIN_SET);
+  return;
+}
 
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc) {
+  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_7, GPIO_PIN_RESET);
+
+  while (__HAL_UART_GET_FLAG(&huart3, UART_FLAG_TC) == RESET) {}
+  sprintf(adcValueDisplayValue, adcValueDisplayTemplate, adc1Values[0], adc1Values[1], adc1Values[2], adc1Values[3], adc1Values[4], adc1Values[5], adc1Values[6], adc1Values[7]);
+  HAL_UART_Transmit(&huart3, (uint8_t*) adcValueDisplayValue, strlen(adcValueDisplayValue), 100);
+
+  // while (__HAL_UART_GET_FLAG(&huart3, UART_FLAG_TC) == RESET) {}
+  // HAL_UART_Transmit(&huart3, (uint8_t*) "\r\nconv completed!\r\n", 20, 100);
+  return;
+}
 /* USER CODE END 4 */
 
 /**
