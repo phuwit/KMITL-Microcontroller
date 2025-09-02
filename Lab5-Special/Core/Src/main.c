@@ -73,8 +73,9 @@ PCD_HandleTypeDef hpcd_USB_OTG_FS;
 /* USER CODE BEGIN PV */
 volatile uint8_t adcConversionComplete = 0;
 volatile uint32_t adc1Values[ADC1_VALUE_COUNT];
-char adcValueDisplayTemplate[] = "%#010x\t%#010x\t%#010x\t%#010x\t%#010x\t%#010x\t%#010x\t%#010x\r\n";
-char adcValueDisplayValue[100] = "\0";
+char adcValueDisplayTemplatePt1[] = "%#010x\t%#010x\t%#010x\t%#010x\t";
+char adcValueDisplayTemplatePt2[] = "%#010x\t%#010x\t%#010x\t%#010x\r\n";
+char adcValueDisplayRendered[100] = "\0";
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -91,10 +92,14 @@ static void MX_USB_OTG_FS_PCD_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-void adcDisplayReadValues() {
-  while (__HAL_UART_GET_FLAG(&huart3, UART_FLAG_TC) == RESET) {}
-  sprintf(adcValueDisplayValue, adcValueDisplayTemplate, adc1Values[0], adc1Values[1], adc1Values[2], adc1Values[3], adc1Values[4], adc1Values[5], adc1Values[6], adc1Values[7]);
-  HAL_UART_Transmit(&huart3, (uint8_t*) adcValueDisplayValue, strlen(adcValueDisplayValue), 100);
+void adcDisplayReadValuesPt1() {
+  sprintf(adcValueDisplayRendered, adcValueDisplayTemplatePt1, adc1Values[0], adc1Values[1], adc1Values[2], adc1Values[3]);
+  HAL_UART_Transmit(&huart3, (uint8_t*) adcValueDisplayRendered, strlen(adcValueDisplayRendered), 100);
+}
+
+void adcDisplayReadValuesPt2() {
+  sprintf(adcValueDisplayRendered, adcValueDisplayTemplatePt2, adc1Values[4], adc1Values[5], adc1Values[6], adc1Values[7]);
+  HAL_UART_Transmit(&huart3, (uint8_t*) adcValueDisplayRendered, strlen(adcValueDisplayRendered), 100);
 }
 
 /* USER CODE END 0 */
@@ -152,11 +157,11 @@ int main(void)
     // HAL_ADC_Stop_DMA(&hadc1);
     // HAL_Delay(300);
 
-    if (adcConversionComplete == 1) {
-      adcDisplayReadValues();
-      adcConversionComplete = 0;
-    }
-    HAL_Delay(300);
+    // if (adcConversionComplete == 1) {
+    //   adcDisplayReadValues();
+    //   adcConversionComplete = 0;
+    // }
+    // HAL_Delay(300);
   }
   /* USER CODE END 3 */
 }
@@ -524,8 +529,10 @@ static void MX_GPIO_Init(void)
 void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef* hadc) {
   HAL_GPIO_WritePin(GPIOB, GPIO_PIN_7, GPIO_PIN_SET);
 
-  while (__HAL_UART_GET_FLAG(&huart3, UART_FLAG_TC) == RESET) {}
-  HAL_UART_Transmit(&huart3, (uint8_t*) "turning on LD1\r\n", 17, 100);
+  // while (__HAL_UART_GET_FLAG(&huart3, UART_FLAG_TC) == RESET) {}
+  // HAL_UART_Transmit(&huart3, (uint8_t*) "turning on LD1\r\n", 17, 100);
+
+  adcDisplayReadValuesPt1();
 
   return;
 }
@@ -535,8 +542,11 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc) {
 
   adcConversionComplete = 1;
 
-  while (__HAL_UART_GET_FLAG(&huart3, UART_FLAG_TC) == RESET) {}
-  HAL_UART_Transmit(&huart3, (uint8_t*) "turning off LD1\r\n", 18, 100);
+  // while (__HAL_UART_GET_FLAG(&huart3, UART_FLAG_TC) == RESET) {}
+  // HAL_UART_Transmit(&huart3, (uint8_t*) "turning off LD1\r\n", 18, 100);
+
+  adcDisplayReadValuesPt2();
+
   return;
 }
 /* USER CODE END 4 */
