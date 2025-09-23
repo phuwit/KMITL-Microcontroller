@@ -106,7 +106,7 @@
 #define LCD_RST_PORT GPIOC
 #define LCD_RST_PIN GPIO_PIN_10
 
-#define BURST_MAX_SIZE 500
+#define BURST_MAX_SIZE 4096
 
 #define BLACK 0x0000
 #define NAVY 0x000F
